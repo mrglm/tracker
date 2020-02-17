@@ -44,7 +44,7 @@ instr_new (const uintptr_t addr, const uint8_t size, const uint8_t *opcodes, cha
   memcpy (instr->opcodes, opcodes, size);
 	/* Test opcodes to assign type to instruction */
 	if ((opcodes[0] >= 0x70 && opcodes[0] <= 0x7F)
-			|| (opcodes[0] == 0x0F && opcodes[1] >= 0x80 && opcodes[1] <= 0x8F)
+			|| (opcodes[0] == 0x0F && opcodes[1] >= 0x80 && opcodes[1] <= 0x8F))
     instr->type = BRANCH;
 	else if (opcodes[0] == 0xE8
            || opcodes[0] == 0x9A
@@ -56,7 +56,7 @@ instr_new (const uintptr_t addr, const uint8_t size, const uint8_t *opcodes, cha
 	         || (opcodes[0] == 0xFF && (((size == 2 && opcodes[1] >= 0xE0 && opcodes[1] <= 0xEF) || size == 4 || size == 5) || opcodes[1] == 0x25))
            || (opcodes[0] >= 0xE0 && opcodes[0] <= 0xE3)
 				   || (opcodes[0] == 0x41 && opcodes[1] == 0xFF
-					     && opcodes[2] >= 0xE0 && opcodes[2] <= 0xE7))
+					     && opcodes[2] >= 0xE0 && opcodes[2] <= 0xE7)
            || (opcodes[0] == 0xF3 && (size == 2 || size == 3) && opcodes[1] != 0xC3))
 		instr->type = JUMP;
 	else if (((opcodes[0] == 0xC3 || opcodes[0] == 0xCB) && size == 1)
@@ -296,55 +296,87 @@ hashtable_collisions (hashtable_t *ht)
   return ht->collisions;
 }
 
-/*****************************************/
+/* Linked list implementation */
 
-
-struct _trace_t
+struct _list_t
 {
-	instr_t *instruction; /* Index for the hash value of the instruction */
-	trace_t *next; /* Pointer to the next value in the list */
+  void *data;
+  list_t *next;
 };
+
+list_t *
+list_new (void *d)
+{
+  list_t *l = malloc (sizeof (list_t));
+  if (!l)
+    return NULL;
+  l->data = d;
+  l->next = NULL;
+  return l;
+}
+
+list_t *
+list_insert_before (list_t *l, void *d)
+{
+  if (!l)
+    return NULL;
+  list_t *new = malloc (sizeof (list_t));
+  if (!new)
+		return NULL;
+  new->data = d;
+  new->next = l;
+  return l;
+}
+
+list_t *
+list_insert_after (list_t *l, void *d)
+{
+  if (!l)
+    return NULL;
+  list_t *new = malloc (sizeof (list_t));
+  if (!new)
+		return NULL;
+  new->data = d;
+  new->next = l->next;
+  l->next = new;
+  return l;
+}
+
+void
+list_delete (list_t *l)
+{
+  if (!l)
+    return;
+  list_t *tmp = l;
+  while (tmp->next)
+    {
+      tmp = tmp->next;
+      free (l);
+      l = tmp;
+    }
+  free (l);
+  return;
+}
+
+/* Trace implementation */
 
 trace_t *
 trace_new (instr_t *ins)
 {
-	trace_t *t = malloc (sizeof (trace_t));
-	if (!t)
-		return NULL;
-		/* Initialize trace */
-	t->instruction = ins;
-	t->next = NULL;
-	return t;
+	return list_new (ins);
 }
 
 trace_t *
 trace_insert (trace_t *t, instr_t *ins)
 {
-	if (!t)
-		return NULL;
-	trace_t *new = trace_new (ins);
-	if (!new)
-		return NULL;
-	if (t->next)
-		new->next = t->next;
-	t->next = new;
-	return new;
+	return list_insert_after (t, ins);
 }
 
 void
 trace_delete (trace_t *t)
 {
-	if (!t)
-		return;
-	trace_t *tmp = t;
-	while (tmp->next)
-		{
-			tmp = tmp->next;
-			free (t);
-			t = tmp;
-		}
-	free(t);
-	return;
+	list_delete (t);
+  return;
 }
 
 trace_t *
@@ -352,7 +384,7 @@ trace_compare (trace_t *t1, trace_t *t2)
 {
 	trace_t *tmp1 = t1;
 	trace_t *tmp2 = t2;
-	while (tmp1->instruction->address == tmp2->instruction->address)
+	while (((instr_t *) tmp1->data)->address == ((instr_t *) tmp2->data)->address)
 		{
 			tmp1 = tmp1->next;
 			tmp2 = tmp2->next;
@@ -364,8 +396,35 @@ trace_compare (trace_t *t1, trace_t *t2)
 		return tmp2;
 }
 
-/********************************************************************/
+/* Stack implementation */
 
+stack_t *
+stack_new (void *d)
+{
+  return list_new (d);
+}
+
+stack_t *
+stack_push (stack_t *s, void *d)
+{
+  if (!s)
+    return list_new (d);
+  return list_insert_before (s, d);
+}
+
+void *
+stack_pop (stack_t *s)
+{
+  if (!s)
+    return NULL;
+  void *d = s->data;
+  stack_t *tmp = s-> next;
+  free (s);
+  s = tmp;
+  return d;
+}
+
+/* CFG implementation */
 
 cfg_t *
 cfg_new (hashtable_t *ht, instr_t *ins, char *str)

@@ -44,9 +44,12 @@ typedef struct _hashtable_t hashtable_t;
 /* ***** cfg nodes keeping track of the executions ***** */
 typedef struct _cfg_t cfg_t;
 
-/* ***** Linked list to store a trace ***** */
-typedef struct _trace_t trace_t;
+/* ***** Linked list to store a trace, a stack or a queue ***** */
+typedef struct _list_t list_t;
 
+typedef struct _list_t trace_t;
+
+typedef struct _list_t stack_t;
 
 /* ***** instr_t functions ***** */
 
@@ -154,7 +157,7 @@ char *cfg_get_str (cfg_t *CFG);
 /* Get a pointer to the first node in the function number index */
 cfg_t *get_function_entry (size_t index);
 
-/* Adds the very first node to function_entry */ 
+/* Adds the very first node to function_entry */
 void add_first_entry (cfg_t *CFG);
 
 #endif /* _TRACE_H */
