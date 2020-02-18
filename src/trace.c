@@ -113,14 +113,8 @@ struct _cfg_t
 	cfg_t **successor; /* Array of pointers to successor */
 };
 
-// /* Represent the number of successive calls whithout rets */
-// uint16_t depth = 0;
 /* Keep track of the number of different function called */
 uint16_t nb_name = 0;
-// /* Array of caller indexed by depth */
-// cfg_t *stack[256] = {NULL};
-/* Arry of function's entry */
-cfg_t *function_entry[256] = {NULL};
 
 /* Compression function for Merkle-Damgard construction */
 #define mix(h)                                                                 \
@@ -339,7 +333,7 @@ list_insert_after (list_t *l, void *d)
   new->data = d;
   new->next = l->next;
   l->next = new;
-  return l;
+  return new;
 }
 
 void
@@ -356,6 +350,26 @@ list_delete (list_t *l)
     }
   free (l);
   return;
+}
+
+void *
+list_get_ith (list_t *l, unsigned int i)
+{
+  if (!l)
+    return NULL;
+  if (!i)
+    return l->data;
+  return list_get_ith(l->next, i - 1);
+}
+
+unsigned int
+list_get_size (list_t *l)
+{
+  if (!l)
+    return 0;
+  if (!l->next)
+    return 1;
+  return 1 + list_get_size (l->next);
 }
 
 /* Trace implementation */
@@ -440,7 +454,7 @@ stack_delete (stack_t *s)
 /* CFG implementation */
 
 cfg_t *
-cfg_new (hashtable_t *ht, instr_t *ins, char *str)
+cfg_new (hashtable_t *ht, instr_t *ins, char *str, list_t **tail_entries)
 {
   cfg_t *CFG = calloc (1, sizeof (cfg_t));
 	if (!CFG)
@@ -467,8 +481,8 @@ cfg_new (hashtable_t *ht, instr_t *ins, char *str)
     }
   strcpy (CFG->str_graph, str);
 	/* Initializing the nmae if it is the first function */
-	if (nb_name == 0)
-		CFG->name = 0;
+	if (*tail_entries == NULL)
+    CFG->name = 0;
 	hashtable_insert (ht, CFG);
 	return CFG;
 }
@@ -488,7 +502,7 @@ is_power_2 (uint16_t n)
 }
 
 cfg_t *
-aux_cfg_insert (cfg_t *CFG, cfg_t *new, stack_t **stack)
+aux_cfg_insert (cfg_t *CFG, cfg_t *new, stack_t **stack, list_t **tail_entries)
 {
 	if (!new)
 		return NULL;
@@ -584,7 +598,7 @@ aux_cfg_insert (cfg_t *CFG, cfg_t *new, stack_t **stack)
 }
 
 cfg_t *
-cfg_insert (hashtable_t *ht, cfg_t *CFG, instr_t *ins, char *str, stack_t **stack)
+cfg_insert (hashtable_t *ht, cfg_t *CFG, instr_t *ins, char *str, stack_t **stack, list_t **tail_entries)
 {
 	if (!CFG)
 		return NULL;
@@ -592,16 +606,15 @@ cfg_insert (hashtable_t *ht, cfg_t *CFG, instr_t *ins, char *str, stack_t **stac
 	/* First time seeing this instruction */
 	if (!new)
 		{
-		new = cfg_new (ht, ins, str);
+		new = cfg_new (ht, ins, str, tail_entries);
 		/* Pushing the call on the stack */
 		if (CFG->instruction->type == CALL)
 		{
-      nb_name++;
-      function_entry[nb_name] = new;
+      *tail_entries = list_insert_after (*tail_entries, new);
       *stack = stack_push (*stack, CFG);
 		}
 
-		return aux_cfg_insert(CFG, new, stack);
+		return aux_cfg_insert(CFG, new, stack, tail_entries);
 		}
 else
 	{
@@ -619,10 +632,9 @@ else
 					return new;
 			}
 
-		return aux_cfg_insert(CFG, new, stack);
+		return aux_cfg_insert(CFG, new, stack, tail_entries);
 	}
 }
-
 
 void
 cfg_delete (cfg_t *CFG)
@@ -684,26 +696,8 @@ cfg_get_successor_i (cfg_t *CFG, uint16_t i)
   return CFG->successor[i];
 }
 
-/* to delete ? */
-size_t
-get_nb_name (void)
-{
-  return nb_name;
-}
-
-cfg_t *
-get_function_entry (size_t index)
-{
-  return function_entry[index];
-}
-
 char *
 cfg_get_str (cfg_t *CFG)
 {
   return CFG->str_graph;
-}
-
-void add_first_entry (cfg_t *CFG)
-{
-	function_entry[0] = CFG;
 }

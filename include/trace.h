@@ -95,7 +95,17 @@ size_t hashtable_collisions (hashtable_t *ht);
 
 /* ***** list_t functions ***** */
 
+list_t *list_new (void *d);
 
+list_t *list_insert_before (list_t *l, void *d);
+
+list_t *list_insert_after (list_t *l, void *d);
+
+void list_delete (list_t *l);
+
+void *list_get_ith (list_t *l, unsigned int i);
+
+unsigned int list_get_size (list_t *l);
 
 /* ***** trace_t functions ***** */
 
@@ -115,22 +125,6 @@ trace_t *trace_compare (trace_t *t1, trace_t *t2);
 
 /* ***** stack_t functions ***** */
 
-list_t *list_new (void *d);
-
-list_t *list_insert_before (list_t *l, void *d);
-
-list_t *list_insert_after (list_t *l, void *d);
-
-void list_delete (list_t *l);
-
-trace_t *trace_new (instr_t *ins);
-
-trace_t *trace_insert (trace_t *t, instr_t *ins);
-
-void trace_delete (trace_t *t);
-
-trace_t *trace_compare (trace_t *t1, trace_t *t2);
-
 stack_t *stack_new (void *d);
 
 stack_t *stack_push (stack_t *s, void *d);
@@ -145,14 +139,14 @@ void stack_delete (stack_t *s);
 
 /* Creates a cfg and it with hash_index
 Returns a pointer to the created trace, or NULL if an error occured */
-cfg_t *cfg_new (hashtable_t *ht, instr_t *ins, char *str);
+cfg_t *cfg_new (hashtable_t *ht, instr_t *ins, char *str, list_t **tail_entries);
 
 /* Auxiliary function for cfg_insert */
-cfg_t *aux_cfg_insert (cfg_t *CFG, cfg_t *new, stack_t **stack);
+cfg_t *aux_cfg_insert (cfg_t *CFG, cfg_t *new, stack_t **stack, list_t **tail_entries);
 
 /* Creates an element initialized with ins and insert it in CFG's succesors
 Returns a pointer to the created element or NULL if an error occured*/
-cfg_t *cfg_insert (hashtable_t *ht, cfg_t *CFG, instr_t *ins, char *str, stack_t **stack);
+cfg_t *cfg_insert (hashtable_t *ht, cfg_t *CFG, instr_t *ins, char *str, stack_t **stack, list_t **tail_entries);
 
 /* Free every allocated field of CFG, as well as CFG itself */
 void cfg_delete (cfg_t *CFG);

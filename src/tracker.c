@@ -420,6 +420,8 @@ main (int argc, char *argv[], char *envp[])
   g = agopen ("G", Agstrictdirected, NULL);
 	Agsym_t *sym;
 	sym = agattr (g, AGNODE, "shape", "box");
+  list_t *first_entry = NULL;
+  list_t *tail_entries = NULL;
 
 	if (ht == NULL)
 		err (EXIT_FAILURE, "error: cannot create hashtable");
@@ -580,7 +582,7 @@ main (int argc, char *argv[], char *envp[])
 									if (!cfg)
 									 	{
 											/* Create a new trace and store it */
-											cfg = cfg_new (ht, instr, name_node);
+											cfg = cfg_new (ht, instr, name_node, &tail_entries);
 
 											if (!cfg)
   											{
@@ -591,14 +593,15 @@ main (int argc, char *argv[], char *envp[])
   									 			err (EXIT_FAILURE, "error: cannot create a control flow graph");
   											}
 									 		cfg_entry = cfg;
-											add_first_entry (cfg_entry);
+                      first_entry = list_new (cfg);
+                      tail_entries = first_entry;
 										}
 									else
 										{
 											/* Insert a new element in the cfg and update cfg to hold
 											 * the new node */
 
-											cfg = cfg_insert (ht, cfg, instr,name_node, &stack);
+											cfg = cfg_insert (ht, cfg, instr,name_node, &stack, &tail_entries);
 
 											if (!cfg)
   											{
@@ -636,11 +639,12 @@ main (int argc, char *argv[], char *envp[])
 				}
 		}
 
-   	graph_create_function(g, get_function_entry(12), NULL);
+  graph_create_function(g, (cfg_t *) list_get_ith (first_entry, 90), NULL);
 
   fclose (input);
 	fclose (output);
 
+  list_delete (first_entry);
 	hashtable_delete (ht);
   agwrite(g, fp);
   agclose(g);
