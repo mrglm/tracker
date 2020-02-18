@@ -319,75 +319,6 @@ graph_create_function (Agraph_t *g, cfg_t *entry, Agnode_t *n)
     return g;
 }
 
-static Agraph_t *
-graph_create_function_2 (Agraph_t *g, cfg_t *entry)
-{
-  Agnode_t *n, *m;
-  cfg_t *old = entry;
-	cfg_t *new;
-	while (cfg_get_type (old) == BASIC)
-	{
-		new = cfg_get_successor_i(old, 0);
-		n = agnode (g, cfg_get_str(old), TRUE);
-    m = agnode (g, cfg_get_str(new), TRUE);
-		if (!agedge (g, n, m, NULL, FALSE))
-			agedge (g, n, m, NULL, TRUE);
-		else
-			return g;
-		if (cfg_get_type (new) != RET)
-		{
-			new = old;
-			old = cfg_get_successor_i(old, 0);
-		}
-		else
-		{
-			return g;
-		}
-	}
-	if (cfg_get_type (old) == BRANCH || cfg_get_type (old) == JUMP)
-	{
-		uint16_t j = 0;
-		while (j < cfg_get_nb_out (old))
-		{
-			new = cfg_get_successor_i(old, j);
-			n = agnode (g, cfg_get_str(old), TRUE);
-			m = agnode (g, cfg_get_str(new), TRUE);
-			if (!agedge (g, n, m, NULL, FALSE))
-			{
-				agedge (g, n, m, NULL, TRUE);
-				g = graph_create_function_2(g, new);
-			}
-			j++;
-		}
-	}
-	else if (cfg_get_type (old) == CALL)
-	{
-		uint16_t i = 0;
-		while (i < cfg_get_nb_out (old))
-		{
-			new = cfg_get_successor_i(old, i);
-			if (instr_get_addr (cfg_get_instr (old)) + instr_get_size (cfg_get_instr (old))
-		== instr_get_addr ( cfg_get_instr (new)))
-			{
-				n = agnode (g, cfg_get_str(old), TRUE);
-				m = agnode (g, cfg_get_str(new), TRUE);
-				if (!agedge (g, n, m, NULL, FALSE))
-				{
-					agedge (g, n, m, NULL, TRUE);
-					g = graph_create_function_2(g, new);
-				}
-				else
-					return g;
-			}
-			i++;
-		}
-
-	}
-	return g;
-}
-
-
-
 int
 main (int argc, char *argv[], char *envp[])
 {
@@ -582,7 +513,7 @@ main (int argc, char *argv[], char *envp[])
 
 				  /* Main disassembling loop */
 				  size_t instr_count = 0;
-
+          stack_t *stack = NULL;
 
 				  while (true)
 				    {
@@ -667,7 +598,7 @@ main (int argc, char *argv[], char *envp[])
 											/* Insert a new element in the cfg and update cfg to hold
 											 * the new node */
 
-											cfg = cfg_insert (ht, cfg, instr, g,name_node);
+											cfg = cfg_insert (ht, cfg, instr,name_node, &stack);
 
 											if (!cfg)
   											{
@@ -689,6 +620,8 @@ main (int argc, char *argv[], char *envp[])
 				       * we have to wait for ptrace() to return '0'. */
 				      while (ptrace(PTRACE_SINGLESTEP, child, NULL, NULL));
 				    }
+          stack_delete (stack);
+          stack = NULL;
 					cs_close (&handle);
 				  fprintf(output,
 					  "\n"
@@ -703,8 +636,7 @@ main (int argc, char *argv[], char *envp[])
 				}
 		}
 
-
-   		graph_create_function_2(g, get_function_entry(90));
+   	graph_create_function(g, get_function_entry(12), NULL);
 
   fclose (input);
 	fclose (output);

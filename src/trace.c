@@ -113,12 +113,12 @@ struct _cfg_t
 	cfg_t **successor; /* Array of pointers to successor */
 };
 
-/* Represent the number of successive calls whithout rets */
-uint16_t depth = 0;
+// /* Represent the number of successive calls whithout rets */
+// uint16_t depth = 0;
 /* Keep track of the number of different function called */
 uint16_t nb_name = 0;
-/* Array of caller indexed by depth */
-cfg_t *stack[256] = {NULL};
+// /* Array of caller indexed by depth */
+// cfg_t *stack[256] = {NULL};
 /* Arry of function's entry */
 cfg_t *function_entry[256] = {NULL};
 
@@ -325,7 +325,7 @@ list_insert_before (list_t *l, void *d)
 		return NULL;
   new->data = d;
   new->next = l;
-  return l;
+  return new;
 }
 
 list_t *
@@ -412,16 +412,29 @@ stack_push (stack_t *s, void *d)
   return list_insert_before (s, d);
 }
 
-void *
+stack_t *
 stack_pop (stack_t *s)
 {
   if (!s)
     return NULL;
-  void *d = s->data;
-  stack_t *tmp = s-> next;
+  stack_t *tmp = s->next;
   free (s);
-  s = tmp;
-  return d;
+  return tmp;
+}
+
+void *
+stack_get_top (stack_t *s)
+{
+  if (!s)
+    return NULL;
+  return s->data;
+}
+
+void
+stack_delete (stack_t *s)
+{
+  list_delete (s);
+  return;
 }
 
 /* CFG implementation */
@@ -475,7 +488,7 @@ is_power_2 (uint16_t n)
 }
 
 cfg_t *
-aux_cfg_insert (cfg_t *CFG, cfg_t *new)
+aux_cfg_insert (cfg_t *CFG, cfg_t *new, stack_t **stack)
 {
 	if (!new)
 		return NULL;
@@ -489,6 +502,7 @@ aux_cfg_insert (cfg_t *CFG, cfg_t *new)
 		}
   else
     {
+      cfg_t *top = NULL;
 			/* Inserting the new node in the parent's successors */
       switch (CFG->instruction->type)
         {
@@ -528,12 +542,13 @@ aux_cfg_insert (cfg_t *CFG, cfg_t *new)
           break;
         case RET:
 					/* Checking the call on the top of the stack */
-          depth--;
+          if (*stack) {
+          top = (cfg_t *) stack_get_top (*stack);
           if (new->instruction->address
-						== stack[depth]->instruction->address + stack[depth]->instruction->size)
+						== top->instruction->address + top->instruction->size)
           {
-            CFG = stack[depth];
-            stack[depth] = NULL;
+            CFG = top;
+            *stack = stack_pop (*stack);
             bool flag = false;
 						/* Check if new is already a successor of CFG */
             for (size_t i = 0; i < CFG->nb_out; i++)
@@ -547,11 +562,7 @@ aux_cfg_insert (cfg_t *CFG, cfg_t *new)
         			}
               if (flag)
                 break;
-				  }
-				else
-				{
-					depth++;
-				}
+				  }}
           if (is_power_2 (CFG->nb_out))
 					{
             CFG->successor = realloc (CFG->successor, 2 * CFG->nb_out * sizeof (cfg_t *));
@@ -573,7 +584,7 @@ aux_cfg_insert (cfg_t *CFG, cfg_t *new)
 }
 
 cfg_t *
-cfg_insert (hashtable_t *ht, cfg_t *CFG, instr_t *ins,Agraph_t *g, char *str)
+cfg_insert (hashtable_t *ht, cfg_t *CFG, instr_t *ins, char *str, stack_t **stack)
 {
 	if (!CFG)
 		return NULL;
@@ -587,19 +598,17 @@ cfg_insert (hashtable_t *ht, cfg_t *CFG, instr_t *ins,Agraph_t *g, char *str)
 		{
       nb_name++;
       function_entry[nb_name] = new;
-			stack[depth] = CFG;
-			depth++;
+      *stack = stack_push (*stack, CFG);
 		}
 
-		return aux_cfg_insert(CFG, new);
+		return aux_cfg_insert(CFG, new, stack);
 		}
 else
 	{
 		/* Pushing the call on the stack */
 		if (CFG->instruction->type == CALL)
       {
-        stack[depth] = CFG;
-			  depth++;
+        *stack = stack_push (*stack, CFG);
       }
     instr_delete (ins);
 		/* Checking if new is already a successor of old */
@@ -610,7 +619,7 @@ else
 					return new;
 			}
 
-		return aux_cfg_insert(CFG, new);
+		return aux_cfg_insert(CFG, new, stack);
 	}
 }
 

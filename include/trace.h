@@ -93,6 +93,9 @@ size_t hashtable_entries (hashtable_t *ht);
 /* Count the number of collisions in the hashtable */
 size_t hashtable_collisions (hashtable_t *ht);
 
+/* ***** list_t functions ***** */
+
+
 
 /* ***** trace_t functions ***** */
 
@@ -110,6 +113,33 @@ void trace_delete (trace_t *t);
 /* Returns a pointer to the first element where t2 differs from t1 */
 trace_t *trace_compare (trace_t *t1, trace_t *t2);
 
+/* ***** stack_t functions ***** */
+
+list_t *list_new (void *d);
+
+list_t *list_insert_before (list_t *l, void *d);
+
+list_t *list_insert_after (list_t *l, void *d);
+
+void list_delete (list_t *l);
+
+trace_t *trace_new (instr_t *ins);
+
+trace_t *trace_insert (trace_t *t, instr_t *ins);
+
+void trace_delete (trace_t *t);
+
+trace_t *trace_compare (trace_t *t1, trace_t *t2);
+
+stack_t *stack_new (void *d);
+
+stack_t *stack_push (stack_t *s, void *d);
+
+stack_t *stack_pop (stack_t *s);
+
+void *stack_get_top (stack_t *s);
+
+void stack_delete (stack_t *s);
 
 /* ***** cfg_t functions ***** */
 
@@ -118,11 +148,11 @@ Returns a pointer to the created trace, or NULL if an error occured */
 cfg_t *cfg_new (hashtable_t *ht, instr_t *ins, char *str);
 
 /* Auxiliary function for cfg_insert */
-cfg_t *aux_cfg_insert (cfg_t *CFG, cfg_t *new);
+cfg_t *aux_cfg_insert (cfg_t *CFG, cfg_t *new, stack_t **stack);
 
 /* Creates an element initialized with ins and insert it in CFG's succesors
 Returns a pointer to the created element or NULL if an error occured*/
-cfg_t *cfg_insert (hashtable_t *ht, cfg_t *CFG, instr_t *ins, Agraph_t *g, char *str);
+cfg_t *cfg_insert (hashtable_t *ht, cfg_t *CFG, instr_t *ins, char *str, stack_t **stack);
 
 /* Free every allocated field of CFG, as well as CFG itself */
 void cfg_delete (cfg_t *CFG);
