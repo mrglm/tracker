@@ -83,7 +83,7 @@ check_execfile (char *execfilename)
     errx (EXIT_FAILURE, "error: cannot read '%s'", execfilename);
 
   /* Check ELF magic number (first 4 bytes: 0x7f "ELF") */
-  if (buf[0] != 0x7f || strncmp (&(buf[1]), "ELF", 3))
+  if (buf[0] != 0x7F || strncmp (&(buf[1]), "ELF", 3))
     errx (EXIT_FAILURE, "error: '%s' is not an ELF binary", execfilename);
 
   /* Extract executable architecture (byte at 0x12) */
@@ -98,7 +98,7 @@ check_execfile (char *execfilename)
       exec_arch = x86_32_arch;
       break;
 
-    case 0x3e:
+    case 0x3E:
       exec_arch = x86_64_arch;
       break;
 
@@ -137,21 +137,21 @@ get_text_info (const char *execfilename, uint64_t *text_addr, uint64_t *text_siz
     e_shoff = e_shoff << 8;
     e_shoff += buf[i];
   }
-  fseek (execfile, 0x3a, SEEK_SET);
+  fseek (execfile, 0x3A, SEEK_SET);
   fread (&buf, 2, 1, execfile);
   uint64_t e_shentsize = 0;
   for (int i = 1; i >= 0; i--) {
     e_shentsize = e_shentsize << 8;
     e_shentsize += buf[i];
   }
-  fseek (execfile, 0x3c, SEEK_SET);
+  fseek (execfile, 0x3C, SEEK_SET);
   fread (&buf, 2, 1, execfile);
   uint64_t e_shnum = 0;
   for (int i = 1; i >= 0; i--) {
     e_shnum = e_shnum << 8;
     e_shnum += buf[i];
   }
-  fseek (execfile, 0x3e, SEEK_SET);
+  fseek (execfile, 0x3E, SEEK_SET);
   fread (&buf, 2, 1, execfile);
   uint64_t e_shstrndx = 0;
   for (int i = 1; i >= 0; i--) {
@@ -207,7 +207,8 @@ concat_str (char *dest, char *follow)
 		sprintf (dest, "%s", follow);
 		return dest;
 	}
-	dest = realloc (dest, (strlen (dest) + 1 + strlen (follow) + 1) * sizeof (char));
+	dest = realloc (dest,
+                  (strlen (dest) + 1 + strlen (follow) + 1) * sizeof (char));
 	sprintf (dest + strlen(dest), "\n%s", follow);
 	return dest;
 }
@@ -316,7 +317,7 @@ graph_create_function (Agraph_t *g, cfg_t *entry, Agnode_t *n)
             graph_create_function (g, cfg_get_successor_i (old, i), m);
         }
     }
-    return g;
+  return g;
 }
 
 int
@@ -411,17 +412,20 @@ main (int argc, char *argv[], char *envp[])
 				nb_line++;
 		}
 	rewind (input);
+
 	cfg_t *cfg = NULL;
 	cfg_t *cfg_entry = NULL;
+  list_t *first_entry = NULL;
+  list_t *tail_entries = NULL;
+
 	hashtable_t *ht = hashtable_new (DEFAULT_HASHTABLE_SIZE);
+
   fp = fopen("toto.gv", "w+");
   char name_node[128];
   Agraph_t *g;
   g = agopen ("G", Agstrictdirected, NULL);
 	Agsym_t *sym;
 	sym = agattr (g, AGNODE, "shape", "box");
-  list_t *first_entry = NULL;
-  list_t *tail_entries = NULL;
 
 	if (ht == NULL)
 		err (EXIT_FAILURE, "error: cannot create hashtable");
@@ -639,7 +643,7 @@ main (int argc, char *argv[], char *envp[])
 				}
 		}
 
-  graph_create_function(g, (cfg_t *) list_get_ith (first_entry, 90), NULL);
+  g = graph_create_function(g, (cfg_t *) list_get_ith (first_entry, 90), NULL);
 
   fclose (input);
 	fclose (output);

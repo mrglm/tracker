@@ -95,16 +95,22 @@ size_t hashtable_collisions (hashtable_t *ht);
 
 /* ***** list_t functions ***** */
 
+/* Return a new list_t struct, NULL otherwise */
 list_t *list_new (void *d);
 
+/* Insert an new element before l and return a pointer to it*/
 list_t *list_insert_before (list_t *l, void *d);
 
+/* Insert an new element after l and return a pointer to it*/
 list_t *list_insert_after (list_t *l, void *d);
 
+/* Free all the elements in a list */
 void list_delete (list_t *l);
 
+/* Return the data from the element at index i in the list */
 void *list_get_ith (list_t *l, unsigned int i);
 
+/* Return the number of element in a list */
 unsigned int list_get_size (list_t *l);
 
 /* ***** trace_t functions ***** */
@@ -125,14 +131,19 @@ trace_t *trace_compare (trace_t *t1, trace_t *t2);
 
 /* ***** stack_t functions ***** */
 
+/* Return a new stack_t struct, NULL otherwise */
 stack_t *stack_new (void *d);
 
+/* Push a new element on top of the stack and return a pointer to it */
 stack_t *stack_push (stack_t *s, void *d);
 
+/* Pop the top of the stack a return a pointer to the new top */
 stack_t *stack_pop (stack_t *s);
 
+/* Get the element on top of the stack */
 void *stack_get_top (stack_t *s);
 
+/* Free the stack */
 void stack_delete (stack_t *s);
 
 /* ***** cfg_t functions ***** */

@@ -48,12 +48,14 @@ instr_new (const uintptr_t addr, const uint8_t size, const uint8_t *opcodes, cha
     instr->type = BRANCH;
 	else if (opcodes[0] == 0xE8
            || opcodes[0] == 0x9A
-		       || (opcodes[0] == 0xFF && (((size == 2 && opcodes[1] >= 0xD0 && opcodes[1] <= 0xDF) || size == 3) || opcodes[1] == 0x15))
+		       || (opcodes[0] == 0xFF && (((size == 2 && opcodes[1] >= 0xD0 && opcodes[1] <= 0xDF)
+                                        || size == 3) || opcodes[1] == 0x15))
 				 	 || (opcodes[0] == 0x41 && opcodes[1] == 0xFF
 						   && ((opcodes[2] >= 0xD0 && opcodes[2] <= 0xD7) || size > 3)))
 		instr->type = CALL;
 	else if ((opcodes[0] >= 0xE9 && opcodes[0] <= 0xEB)
-	         || (opcodes[0] == 0xFF && (((size == 2 && opcodes[1] >= 0xE0 && opcodes[1] <= 0xEF) || size == 4 || size == 5) || opcodes[1] == 0x25))
+	         || (opcodes[0] == 0xFF && (((size == 2 && opcodes[1] >= 0xE0 && opcodes[1] <= 0xEF)
+                                        || size == 4 || size == 5) || opcodes[1] == 0x25))
            || (opcodes[0] >= 0xE0 && opcodes[0] <= 0xE3)
 				   || (opcodes[0] == 0x41 && opcodes[1] == 0xFF
 					     && opcodes[2] >= 0xE0 && opcodes[2] <= 0xE7)
@@ -537,10 +539,9 @@ aux_cfg_insert (cfg_t *CFG, cfg_t *new, stack_t **stack, list_t **tail_entries)
           new->nb_in++;
           new->name = CFG->name;
           break;
-				// case CALL:
-				// 	stack[depth] = CFG;
-				// 	depth++;
-				// 	break;
+				case CALL:
+					*stack = stack_push (*stack, CFG);
+					break;
         case JUMP:
           if (is_power_2 (CFG->nb_out))
             CFG->successor = realloc (CFG->successor, 2 * CFG->nb_out * sizeof (cfg_t *));
@@ -556,31 +557,31 @@ aux_cfg_insert (cfg_t *CFG, cfg_t *new, stack_t **stack, list_t **tail_entries)
           break;
         case RET:
 					/* Checking the call on the top of the stack */
-          if (*stack) {
-          top = (cfg_t *) stack_get_top (*stack);
-          if (new->instruction->address
-						== top->instruction->address + top->instruction->size)
-          {
-            CFG = top;
-            *stack = stack_pop (*stack);
-            bool flag = false;
-						/* Check if new is already a successor of CFG */
-            for (size_t i = 0; i < CFG->nb_out; i++)
-        			{
-        				if (CFG->successor[i]->instruction->address
-        					 == new->instruction->address)
-        					{
-                    flag = true;
-                    break;
-                  }
-        			}
-              if (flag)
-                break;
-				  }}
+          if (*stack)
+            {
+              top = (cfg_t *) stack_get_top (*stack);
+              if (new->instruction->address
+    						== top->instruction->address + top->instruction->size)
+                  {
+                    CFG = top;
+                    *stack = stack_pop (*stack);
+                    bool flag = false;
+        						/* Check if new is already a successor of CFG */
+                    for (size_t i = 0; i < CFG->nb_out; i++)
+                			{
+                				if (CFG->successor[i]->instruction->address
+                					 == new->instruction->address)
+                					{
+                            flag = true;
+                            break;
+                          }
+                			}
+                    if (flag)
+                      break;
+      				    }
+            }
           if (is_power_2 (CFG->nb_out))
-					{
             CFG->successor = realloc (CFG->successor, 2 * CFG->nb_out * sizeof (cfg_t *));
-					}
 
           if (!CFG->successor)
             {
@@ -594,7 +595,7 @@ aux_cfg_insert (cfg_t *CFG, cfg_t *new, stack_t **stack, list_t **tail_entries)
           break;
         }
     }
-    return new;
+  return new;
 }
 
 cfg_t *
@@ -606,34 +607,22 @@ cfg_insert (hashtable_t *ht, cfg_t *CFG, instr_t *ins, char *str, stack_t **stac
 	/* First time seeing this instruction */
 	if (!new)
 		{
-		new = cfg_new (ht, ins, str, tail_entries);
-		/* Pushing the call on the stack */
-		if (CFG->instruction->type == CALL)
-		{
-      *tail_entries = list_insert_after (*tail_entries, new);
-      *stack = stack_push (*stack, CFG);
+  		new = cfg_new (ht, ins, str, tail_entries);
+  		/* Pushing the call on the stack */
+  		if (CFG->instruction->type == CALL)
+        *tail_entries = list_insert_after (*tail_entries, new);
+  		return aux_cfg_insert(CFG, new, stack, tail_entries);
 		}
-
-		return aux_cfg_insert(CFG, new, stack, tail_entries);
-		}
-else
-	{
-		/* Pushing the call on the stack */
-		if (CFG->instruction->type == CALL)
-      {
-        *stack = stack_push (*stack, CFG);
-      }
-    instr_delete (ins);
-		/* Checking if new is already a successor of old */
-		for (size_t i = 0; i < CFG->nb_out; i++)
-			{
-				if (CFG->successor[i]->instruction->address
-					 == new->instruction->address)
-					return new;
-			}
-
-		return aux_cfg_insert(CFG, new, stack, tail_entries);
-	}
+  else
+	  {
+      instr_delete (ins);
+		  /* Checking if new is already a successor of old */
+		  for (size_t i = 0; i < CFG->nb_out; i++)
+				  if (CFG->successor[i]->instruction->address
+					    == new->instruction->address)
+					  return new;
+		  return aux_cfg_insert(CFG, new, stack, tail_entries);
+	  }
 }
 
 void
