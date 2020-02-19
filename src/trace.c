@@ -539,9 +539,6 @@ aux_cfg_insert (cfg_t *CFG, cfg_t *new, stack_t **stack, list_t **tail_entries)
           new->nb_in++;
           new->name = CFG->name;
           break;
-				case CALL:
-					*stack = stack_push (*stack, CFG);
-					break;
         case JUMP:
           if (is_power_2 (CFG->nb_out))
             CFG->successor = realloc (CFG->successor, 2 * CFG->nb_out * sizeof (cfg_t *));
@@ -610,13 +607,18 @@ cfg_insert (hashtable_t *ht, cfg_t *CFG, instr_t *ins, char *str, stack_t **stac
   		new = cfg_new (ht, ins, str, tail_entries);
   		/* Pushing the call on the stack */
   		if (CFG->instruction->type == CALL)
-        *tail_entries = list_insert_after (*tail_entries, new);
+        {
+          *tail_entries = list_insert_after (*tail_entries, new);
+          *stack = stack_push (*stack, CFG);
+        }
   		return aux_cfg_insert(CFG, new, stack, tail_entries);
 		}
   else
 	  {
       instr_delete (ins);
 		  /* Checking if new is already a successor of old */
+      if (CFG->instruction->type == CALL)
+        *stack = stack_push (*stack, CFG);
 		  for (size_t i = 0; i < CFG->nb_out; i++)
 				  if (CFG->successor[i]->instruction->address
 					    == new->instruction->address)
