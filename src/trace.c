@@ -364,7 +364,7 @@ list_get_ith (list_t *l, unsigned int i)
   return list_get_ith(l->next, i - 1);
 }
 
-unsigned int
+uint16_t
 list_get_size (list_t *l)
 {
   if (!l)
@@ -596,7 +596,7 @@ aux_cfg_insert (cfg_t *CFG, cfg_t *new, stack_t **stack, list_t **tail_entries)
 }
 
 cfg_t *
-cfg_insert (hashtable_t *ht, cfg_t *CFG, instr_t *ins, char *str, stack_t **stack, list_t **tail_entries)
+cfg_insert (hashtable_t *ht, cfg_t *CFG, instr_t *ins, char *str, stack_t **stack, list_t **tail_entries, uint16_t *nb_function)
 {
 	if (!CFG)
 		return NULL;
@@ -610,6 +610,8 @@ cfg_insert (hashtable_t *ht, cfg_t *CFG, instr_t *ins, char *str, stack_t **stac
         {
           *tail_entries = list_insert_after (*tail_entries, new);
           *stack = stack_push (*stack, CFG);
+          *nb_function++;
+          new->name = nb_function;
         }
   		return aux_cfg_insert(CFG, new, stack, tail_entries);
 		}
@@ -618,7 +620,9 @@ cfg_insert (hashtable_t *ht, cfg_t *CFG, instr_t *ins, char *str, stack_t **stac
       instr_delete (ins);
 		  /* Checking if new is already a successor of old */
       if (CFG->instruction->type == CALL)
-        *stack = stack_push (*stack, CFG);
+        {
+          *stack = stack_push (*stack, CFG);
+        }
 		  for (size_t i = 0; i < CFG->nb_out; i++)
 				  if (CFG->successor[i]->instruction->address
 					    == new->instruction->address)

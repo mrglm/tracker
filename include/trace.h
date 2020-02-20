@@ -111,7 +111,7 @@ void list_delete (list_t *l);
 void *list_get_ith (list_t *l, unsigned int i);
 
 /* Return the number of element in a list */
-unsigned int list_get_size (list_t *l);
+uint16_t list_get_size (list_t *l);
 
 /* ***** trace_t functions ***** */
 
@@ -157,7 +157,7 @@ cfg_t *aux_cfg_insert (cfg_t *CFG, cfg_t *new, stack_t **stack, list_t **tail_en
 
 /* Creates an element initialized with ins and insert it in CFG's succesors
 Returns a pointer to the created element or NULL if an error occured*/
-cfg_t *cfg_insert (hashtable_t *ht, cfg_t *CFG, instr_t *ins, char *str, stack_t **stack, list_t **tail_entries);
+cfg_t *cfg_insert (hashtable_t *ht, cfg_t *CFG, instr_t *ins, char *str, stack_t **stack, list_t **tail_entries, uint16_t *nb_function);
 
 /* Free every allocated field of CFG, as well as CFG itself */
 void cfg_delete (cfg_t *CFG);

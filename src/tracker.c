@@ -417,6 +417,7 @@ main (int argc, char *argv[], char *envp[])
 	cfg_t *cfg_entry = NULL;
   list_t *first_entry = NULL;
   list_t *tail_entries = NULL;
+  uint16_t nb_function = 0;
 
 	hashtable_t *ht = hashtable_new (DEFAULT_HASHTABLE_SIZE);
 
@@ -605,7 +606,7 @@ main (int argc, char *argv[], char *envp[])
 											/* Insert a new element in the cfg and update cfg to hold
 											 * the new node */
 
-											cfg = cfg_insert (ht, cfg, instr,name_node, &stack, &tail_entries);
+											cfg = cfg_insert (ht, cfg, instr,name_node, &stack, &tail_entries, &nb_function);
 
 											if (!cfg)
   											{
