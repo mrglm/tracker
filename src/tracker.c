@@ -572,7 +572,7 @@ main (int argc, char *argv[], char *envp[])
                   sprintf(name_node + strlen(name_node), "%s",insn[0].op_str);
 
 					  			/* Create the instr_t structure */
-					  			instr_t *instr = instr_new (ip, insn[0].size, buf, name_node);
+					  			instr_t *instr = instr_new (ip, insn[0].size, buf);
 					  			if (!instr)
 									{
 										hashtable_delete (ht);
@@ -606,7 +606,7 @@ main (int argc, char *argv[], char *envp[])
 											/* Insert a new element in the cfg and update cfg to hold
 											 * the new node */
 
-											cfg = cfg_insert (ht, cfg, instr,name_node, &stack, &tail_entries, &nb_function);
+											cfg = cfg_insert (ht, cfg, instr, name_node, &stack, &tail_entries, &nb_function);
 
 											if (!cfg)
   											{

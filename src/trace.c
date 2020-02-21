@@ -19,14 +19,13 @@
 struct _instr_t
 {
   uintptr_t address;  /* Address where lies the instruction */
-  // uintptr_t *next; /* List of addresses of the next instructions */
   instr_type_t type;  /* Instr type: 0 = instr, 1 = branch, 2 = call, 3 = jmp, 4 = ret */
   uint8_t size;       /* Opcode size */
   uint8_t opcodes[];  /* Instruction opcode */
 };
 
 instr_t *
-instr_new (const uintptr_t addr, const uint8_t size, const uint8_t *opcodes, char *str_name)
+instr_new (const uintptr_t addr, const uint8_t size, const uint8_t *opcodes)
 {
   /* Check size != 0 and opcodes != NULL */
   if (size == 0 || opcodes == NULL)
@@ -77,19 +76,19 @@ instr_delete (instr_t *instr)
 }
 
 uintptr_t
-instr_get_addr (instr_t * const instr)
+instr_get_addr (const instr_t *instr)
 {
   return instr->address;
 }
 
 size_t
-instr_get_size (instr_t * const instr)
+instr_get_size (const instr_t *instr)
 {
   return instr->size;
 }
 
 uint8_t *
-instr_get_opcodes (instr_t * const instr)
+instr_get_opcodes (const instr_t *instr)
 {
   return instr->opcodes;
 }
@@ -504,7 +503,7 @@ is_power_2 (uint16_t n)
 }
 
 cfg_t *
-aux_cfg_insert (cfg_t *CFG, cfg_t *new, stack_t **stack, list_t **tail_entries)
+aux_cfg_insert (cfg_t *CFG, cfg_t *new, stack_t **stack)
 {
 	if (!new)
 		return NULL;
@@ -610,10 +609,10 @@ cfg_insert (hashtable_t *ht, cfg_t *CFG, instr_t *ins, char *str, stack_t **stac
         {
           *tail_entries = list_insert_after (*tail_entries, new);
           *stack = stack_push (*stack, CFG);
-          *nb_function++;
-          new->name = nb_function;
+          *nb_function = (*nb_function) + 1;
+          new->name = *nb_function;
         }
-  		return aux_cfg_insert(CFG, new, stack, tail_entries);
+  		return aux_cfg_insert(CFG, new, stack);
 		}
   else
 	  {
@@ -627,7 +626,7 @@ cfg_insert (hashtable_t *ht, cfg_t *CFG, instr_t *ins, char *str, stack_t **stac
 				  if (CFG->successor[i]->instruction->address
 					    == new->instruction->address)
 					  return new;
-		  return aux_cfg_insert(CFG, new, stack, tail_entries);
+		  return aux_cfg_insert(CFG, new, stack);
 	  }
 }
 

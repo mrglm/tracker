@@ -55,19 +55,19 @@ typedef struct _list_t stack_t;
 
 /* Return a new instr_t struct, NULL otherwise (and set errno) */
 instr_t *instr_new (const uintptr_t addr, const uint8_t size,
-                    const uint8_t *opcodes, char *str_name);
+                    const uint8_t *opcodes);
 
 /* Delete the assembly instruction from memory */
 void instr_delete (instr_t *instr);
 
 /* Get the address of the instruction */
-uintptr_t instr_get_addr (instr_t *const instr);
+uintptr_t instr_get_addr (const instr_t *instr);
 
 /* Get the size (in bytes) of the instruction */
-size_t instr_get_size (instr_t *const instr);
+size_t instr_get_size (const instr_t *instr);
 
 /* Get a pointer to the opcodes of the instruction */
-uint8_t * instr_get_opcodes (instr_t *const instr);
+uint8_t * instr_get_opcodes (const instr_t *instr);
 
 
 /* ***** hashtable_t functions ***** */
@@ -153,7 +153,7 @@ Returns a pointer to the created trace, or NULL if an error occured */
 cfg_t *cfg_new (hashtable_t *ht, instr_t *ins, char *str, list_t **tail_entries);
 
 /* Auxiliary function for cfg_insert */
-cfg_t *aux_cfg_insert (cfg_t *CFG, cfg_t *new, stack_t **stack, list_t **tail_entries);
+cfg_t *aux_cfg_insert (cfg_t *CFG, cfg_t *new, stack_t **stack);
 
 /* Creates an element initialized with ins and insert it in CFG's succesors
 Returns a pointer to the created element or NULL if an error occured*/
