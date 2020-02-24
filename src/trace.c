@@ -521,10 +521,6 @@ aux_cfg_insert (cfg_t *CFG, cfg_t *new, stack_t **stack)
 			/* Inserting the new node in the parent's successors */
       switch (CFG->instruction->type)
         {
-        case BASIC:
-          if (CFG->nb_out >= 1)
-            return NULL;
-          break;
         case BRANCH:
           if (CFG->nb_out >= 2)
             return NULL;
